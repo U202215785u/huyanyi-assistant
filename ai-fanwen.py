@@ -1490,7 +1490,17 @@ class MainWindow:
         scrollbar.pack(side="right", fill="y")
 
         letter_frame = tk.Frame(canvas, bg="#0f0f12")
-        canvas.create_window((0, 0), window=letter_frame, anchor="nw", width=360)
+        win_id = canvas.create_window((0, 0), window=letter_frame, anchor="nw")
+
+        # Keep window width synced with canvas width
+        def _sync_width(e):
+            canvas.itemconfig(win_id, width=e.width)
+        canvas.bind("<Configure>", _sync_width)
+
+        # Update scroll region when frame size changes
+        def _sync_scroll(e=None):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+        letter_frame.bind("<Configure>", _sync_scroll)
 
         letter = [
             "护眼仪。",
@@ -1546,14 +1556,14 @@ class MainWindow:
             tk.Label(letter_frame, text=line if line else " ", fg=fg, bg="#0f0f12",
                     font=font, justify="left", wraplength=340).pack(anchor="w", pady=0)
 
-        letter_frame.update_idletasks()
-        canvas.configure(scrollregion=canvas.bbox("all"))
         canvas.yview_moveto(0)
 
-        # Mouse wheel scrolling
+        # Mouse wheel scrolling — bind to all scrollable area widgets
         def on_mousewheel(e):
             canvas.yview_scroll(int(-1 * (e.delta / 120)), "units")
-        canvas.bind("<MouseWheel>", on_mousewheel)
+        for w in (canvas, letter_frame, cf, inner):
+            w.bind("<MouseWheel>", on_mousewheel)
+            w.bind("<Enter>", lambda e, c=canvas: c.focus_set())
 
         tk.Frame(dlg, bg="#f43f5e", height=2).pack(fill="x", side="bottom")
 
