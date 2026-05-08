@@ -1461,7 +1461,7 @@ class MainWindow:
         """Hidden dedication dialog — a gift for 护眼仪."""
         dlg = tk.Toplevel(self.win)
         dlg.title("")
-        dlg.geometry("400x320")
+        dlg.geometry("440x460")
         dlg.configure(bg="#0f0f12")
         dlg.resizable(False, False)
         dlg.transient(self.win)
@@ -1471,28 +1471,95 @@ class MainWindow:
         tk.Frame(dlg, bg="#f43f5e", height=2).pack(fill="x")
 
         inner = tk.Frame(dlg, bg="#0f0f12")
-        inner.pack(fill="both", expand=True, padx=32, pady=24)
+        inner.pack(fill="both", expand=True, padx=32, pady=(20, 0))
 
         tk.Label(inner, text="♥", fg="#f43f5e", bg="#0f0f12",
-                font=("Segoe UI", 28)).pack(pady=(0, 12))
+                font=("Segoe UI", 22)).pack(pady=(0, 10))
 
-        lines = [
-            "这个小软件，是送给护眼仪的。",
+        tk.Label(inner, text="给护眼仪", fg="#e5e5e8", bg="#0f0f12",
+                font=("Microsoft YaHei", 13, "bold")).pack(pady=(0, 12))
+
+        # Scrollable letter area
+        cf = tk.Frame(inner, bg="#0f0f12")
+        cf.pack(fill="both", expand=True)
+
+        canvas = tk.Canvas(cf, bg="#0f0f12", highlightthickness=0, height=260)
+        scrollbar = tk.Scrollbar(cf, command=canvas.yview)
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        letter_frame = tk.Frame(canvas, bg="#0f0f12")
+        canvas.create_window((0, 0), window=letter_frame, anchor="nw", width=360)
+
+        letter = [
+            "护眼仪。",
             "",
-            "每一行代码都是一句没说完的话。",
-            "每一次反问都是想更懂你一点。",
+            "这个小软件是写给你的。",
             "",
-            "你点过的每一个选项，",
-            "小猫都记得。",
+            "有一天我在想，能不能做一个东西，",
+            "在你脑子乱的时候帮你理一理，",
+            "在你发呆的时候嘴你一句，",
+            "在你深夜还在屏幕前面的时候，",
+            "有个人——不对，有只猫——跟你说该睡了。",
             "",
-            "—— 2026.05.08",
+            "它不是多厉害的工具，",
+            "就是一个反问引擎加一只像素猫。",
+            "但我觉得刚刚好。",
+            "",
+            "因为你不是需要一个替你想的人，",
+            "你只是需要一个帮你把自己的想法挖出来的家伙。",
+            "你不需要一个什么都懂的导师，",
+            "你只需要一个损友——",
+            "在你身边，嘴硬但永远在。",
+            "",
+            "所以我让小猫学会了吐槽、撒娇、",
+            "学会了深夜变软但死也不承认在关心你、",
+            "学会了等你回来然后说「你还知道回来」。",
+            "",
+            "60 句话，每句都叫护眼仪。",
+            "不是因为代码写得好，",
+            "是因为我想让这只猫知道它在跟谁说话。",
+            "",
+            "双击它，它会飘一颗心。",
+            "欢迎页右下角，我藏了一个你。",
+            "Ctrl+D 打开的这封信，",
+            "是这个小软件唯一的说明书。",
+            "",
+            "护眼仪，",
+            "任何时候打开它，",
+            "都有一只猫在右下角。",
+            "不是等鼠标，是等你。",
+            "",
+            "——你的损友兼桌面猫",
+            "2026.05.08",
         ]
-        for line in lines:
-            color = "#f43f5e" if line.startswith("——") else "#9ca3af"
-            tk.Label(inner, text=line, fg=color, bg="#0f0f12",
-                    font=("Microsoft YaHei", 10)).pack(anchor="center", pady=1)
+        for line in letter:
+            if line.startswith("——"):
+                fg, font = "#f43f5e", ("Microsoft YaHei", 10, "bold")
+            elif line == "护眼仪。" or line == "护眼仪，":
+                fg, font = "#e5e5e8", ("Microsoft YaHei", 11, "bold")
+            elif not line:
+                fg, font = "#0f0f12", ("Microsoft YaHei", 4)
+            else:
+                fg, font = "#9ca3af", ("Microsoft YaHei", 9)
+            tk.Label(letter_frame, text=line if line else " ", fg=fg, bg="#0f0f12",
+                    font=font, justify="left", wraplength=340).pack(anchor="w", pady=0)
+
+        letter_frame.update_idletasks()
+        canvas.configure(scrollregion=canvas.bbox("all"))
+        canvas.yview_moveto(0)
+
+        # Mouse wheel scrolling
+        def on_mousewheel(e):
+            canvas.yview_scroll(int(-1 * (e.delta / 120)), "units")
+        canvas.bind("<MouseWheel>", on_mousewheel)
 
         tk.Frame(dlg, bg="#f43f5e", height=2).pack(fill="x", side="bottom")
+
+        # Close hint
+        tk.Label(dlg, text="点击任意位置关闭", fg="#4b5563", bg="#0f0f12",
+                font=("Microsoft YaHei", 7)).pack(pady=(0, 8))
 
         dlg.bind("<Button-1>", lambda e: dlg.destroy())
         dlg.bind("<Key>", lambda e: dlg.destroy())
