@@ -408,6 +408,20 @@ class NekoWidget:
         self.sprite_on_canvas = self.canvas.create_image(
             self.W // 2, self.W // 2, image=self.sprites[index])
 
+    def _show_heart(self):
+        """Easter egg: double-click shows a floating heart."""
+        heart = self.canvas.create_text(
+            self.W // 2, self.W // 2 - 20,
+            text="♥", fill="#f43f5e", font=("Segoe UI", 24))
+        # Float upward and fade
+        for i in range(12):
+            self.canvas.move(heart, 0, -2)
+            if i > 6:
+                self.canvas.itemconfig(heart, font=("Segoe UI", 24 - (i - 6) * 2))
+            self.win.update()
+            time.sleep(0.04)
+        self.canvas.delete(heart)
+
     # ── Tick (idle cycle only, no chasing) ────────────────
     def _tick(self):
         now = time.time()
@@ -463,7 +477,14 @@ class NekoWidget:
 
         def release(e):
             if not self._dragging:
-                # Click — surprised then open AI window
+                # Double-click detection — show heart easter egg
+                now = time.time()
+                if now - self.last_click < 0.4:
+                    self._show_heart()
+                    self.last_click = 0
+                    return
+                self.last_click = now
+                # Single click — surprised then open AI window
                 self.state = "surprised"
                 self.state_start = time.time()
                 self.idle_timer = 0
@@ -518,6 +539,10 @@ class MainWindow:
             self._icon_img = icon_img  # keep reference
         except:
             pass
+
+        # Hidden shortcut: Ctrl+D opens dedication
+        self.win.bind("<Control-d>", lambda e: self._show_dedication())
+        self.win.bind("<Control-D>", lambda e: self._show_dedication())
 
         self.mode = None
         self.step = 1
@@ -676,6 +701,14 @@ class MainWindow:
             btn.bind("<Button-1>", lambda e, c=cmd: c())
             btn.bind("<Enter>", lambda e, b=btn: b.configure(fg="#e5e5e8"))
             btn.bind("<Leave>", lambda e, b=btn: b.configure(fg="#9ca3af"))
+
+        # Tiny hidden heart in the bottom-right of welcome page
+        heart = tk.Label(self.main_area, text="♥", fg="#1f1f24", bg="#0f0f12",
+                        font=("Segoe UI", 8), cursor="hand2")
+        heart.place(relx=0.95, rely=0.92, anchor="se")
+        heart.bind("<Button-1>", lambda e: self._show_dedication())
+        heart.bind("<Enter>", lambda e: heart.configure(fg="#f43f5e"))
+        heart.bind("<Leave>", lambda e: heart.configure(fg="#1f1f24"))
 
     def _enter_mode(self, mode_key):
         self.mode = mode_key
@@ -1170,6 +1203,46 @@ class MainWindow:
         if path:
             with open(path, "w", encoding="utf-8") as f:
                 f.write(text)
+
+    def _show_dedication(self):
+        """Hidden dedication dialog — a gift for 护眼仪."""
+        dlg = tk.Toplevel(self.win)
+        dlg.title("")
+        dlg.geometry("400x320")
+        dlg.configure(bg="#0f0f12")
+        dlg.resizable(False, False)
+        dlg.transient(self.win)
+        dlg.grab_set()
+
+        # Top decorative line
+        tk.Frame(dlg, bg="#f43f5e", height=2).pack(fill="x")
+
+        inner = tk.Frame(dlg, bg="#0f0f12")
+        inner.pack(fill="both", expand=True, padx=32, pady=24)
+
+        tk.Label(inner, text="♥", fg="#f43f5e", bg="#0f0f12",
+                font=("Segoe UI", 28)).pack(pady=(0, 12))
+
+        lines = [
+            "这个小软件，是送给护眼仪的。",
+            "",
+            "每一行代码都是一句没说完的话。",
+            "每一次反问都是想更懂你一点。",
+            "",
+            "你点过的每一个选项，",
+            "小猫都记得。",
+            "",
+            "—— 2026.05.08",
+        ]
+        for line in lines:
+            color = "#f43f5e" if line.startswith("——") else "#9ca3af"
+            tk.Label(inner, text=line, fg=color, bg="#0f0f12",
+                    font=("Microsoft YaHei", 10)).pack(anchor="center", pady=1)
+
+        tk.Frame(dlg, bg="#f43f5e", height=2).pack(fill="x", side="bottom")
+
+        dlg.bind("<Button-1>", lambda e: dlg.destroy())
+        dlg.bind("<Key>", lambda e: dlg.destroy())
 
 
 # ── Root (hidden) ───────────────────────────────────────
