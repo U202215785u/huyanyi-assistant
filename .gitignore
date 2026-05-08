@@ -6,6 +6,11 @@ __pycache__/
 # Runtime
 error.log
 
+# PyInstaller
+build/
+dist/
+*.spec
+
 # IDE / Editor
 .claude/
 .vscode/
