@@ -81,6 +81,78 @@ MODE_CONFIG = {
     },
 }
 
+# ── Cat Companion Messages ─────────────────────────────
+CAT_MESSAGES = {
+    "roast": [  # 日常吐槽
+        "又在发呆？奶茶第几杯了",
+        "今天头发扎得歪的",
+        "你屏幕亮度太高了，我眼睛疼",
+        "别看了，说的就是你，动动脖子",
+        "第三杯了吧？我数着呢",
+        "你今天还没笑过，快，笑一个",
+        "这文档你都看半小时了，看我会不会比较快",
+        "我睡了三觉，你姿势没换过",
+        "又摸鱼？没事，我也在摸",
+        "你今天穿的袜子是不是不配对",
+        "我看你那杯水从热看到凉也没喝一口",
+        "你手机亮了三次了，不看一眼？",
+        "我虽然是猫，但我知道要起来走走",
+        "你又熬夜了，眼睛快贴屏幕上了",
+        "你的护眼仪呢？我就是你的护眼仪",
+    ],
+    "care": [  # 傲娇关心
+        "我才不是关心你，就是这屏幕还亮着",
+        "两点了。我不是心疼你，就是觉得这光刺眼",
+        "你明天还要早起吧……算了，说了你也不睡",
+        "外面好安静。就你的键盘还在响。很厉害",
+        "我困得要死，但我的夜视能看到你肩膀没放松",
+        "你打字的声音比白天慢了，该休息了",
+        "我不是想陪你，就是刚好睡在你旁边而已",
+        "手凉了就去加件衣服，反正不是我冷",
+        "你眼皮在打架，你以为我看不到吗",
+        "天快亮了。我不是在计时，就是刚好注意到了",
+        "你不是说过要对自己好一点吗……我记得的",
+        "你离屏幕太近了，我爪子不够长推不了你",
+        "休息吧。明天的问题我帮你接着想",
+        "别想了，今天已经够辛苦了。真的",
+        "耳机戴太久了，取下来听听这个世界",
+    ],
+    "happy": [  # 开心互动
+        "刚才那个想法不错，我听见了",
+        "你今天的状态比昨天好",
+        "我就知道你有东西想说的",
+        "有我在你当然灵感爆棚",
+        "刚才选的那个方向对了",
+        "你看，多聊几句就想清楚了吧",
+        "我就说嘛，你有潜力的",
+        "嗯，这个方向我看好你",
+        "今天心率正常，可以夸一句",
+        "你和你自己聊天的样子还挺帅的",
+        "这个问题问得好，不愧是你",
+        "有进步。下次带上我一起想",
+        "灵感这东西，就是你和自己聊出来的",
+        "知道为什么今天状态好吗？因为我在",
+        "刚才那个问题，你想要的答案其实早有了",
+    ],
+    "lonely": [  # 无聊撒娇
+        "你看看我呀",
+        "我都睡了三觉了，你还没回来",
+        "喵——（翻译：理我一下会怎样）",
+        "我刚刚做了个梦，梦到你跟我说早安",
+        "你的鼠标今天没碰到我",
+        "我在等你哦。不是刻意的，就是刚好醒了",
+        "本猫已离线……骗你的，我一直在",
+        "你不在的时候，屏幕角角上有只蚊子飞过我都没抓",
+        "喂，你的猫还在呢，忘了我了",
+        "我假装不在意，但其实我一直看着",
+        "嘿，记得你还有个朋友在桌面右下角吗",
+        "你走了好久，我以为你忘了路回来了",
+        "我知道你很忙，但我很闲。理我",
+        "我会自己玩，但好像玩够了",
+        "你再不理我，我就把桌面的图标全推下去了",
+    ],
+}
+
 def build_step2_prompt(mode):
     """System prompt for Step 2: option-based 反问, following brainstorming-skill methodology."""
     if mode == "idea":
@@ -356,6 +428,63 @@ def parse_反问_response(text):
 
 NEKO_SCALE = 3  # 32x32 → 96x96
 
+# ── Bubble Widget ───────────────────────────────────────
+class BubbleWidget:
+    """A fleeting speech bubble near the cat."""
+    def __init__(self, parent_window):
+        self.win = tk.Toplevel(parent_window)
+        self.win.overrideredirect(True)
+        self.win.attributes("-topmost", True)
+        self.win.configure(bg="#0f0f12")
+        self.win.withdraw()
+
+        self.label = tk.Label(self.win, text="", fg="#e5e5e8", bg="#0f0f12",
+                             font=("Microsoft YaHei", 10), padx=14, pady=10,
+                             wraplength=280, justify="center")
+        self.label.pack()
+
+        # Thin colored top border
+        self.border = tk.Frame(self.win, bg="#f43f5e", height=2)
+        self.border.pack(fill="x")
+
+        self._fade_job = None
+
+    def show(self, x, y, text, mood="roast"):
+        color_map = {"roast": "#f59e0b", "care": "#f43f5e", "happy": "#10b981",
+                     "lonely": "#6366f1"}
+        self.border.configure(bg=color_map.get(mood, "#f59e0b"))
+
+        self.label.configure(text=text)
+        self.win.deiconify()
+        self.win.update_idletasks()
+        w = self.win.winfo_reqwidth()
+        h = self.win.winfo_reqheight()
+        # Position above the cat
+        self.win.geometry(f"{w}x{h}+{x - w//2 + 48}+{y - h - 8}")
+        self.win.lift()
+
+        # Cancel any existing fade
+        if self._fade_job:
+            self.win.after_cancel(self._fade_job)
+        # Fade out after 4-6 seconds
+        delay = 4000 + int(time.time() * 1000) % 2000
+        self._fade_job = self.win.after(delay, self._fade_out)
+
+        # Click to dismiss
+        self.label.bind("<Button-1>", lambda e: self._fade_out())
+
+    def _fade_out(self):
+        for i in range(8):
+            alpha = 1.0 - i / 8
+            try:
+                self.win.attributes("-alpha", alpha)
+                self.win.update()
+                time.sleep(0.03)
+            except:
+                break
+        self.win.withdraw()
+
+# ── Neko Widget ─────────────────────────────────────────
 class NekoWidget:
     def __init__(self):
         self.win = tk.Toplevel(root)
@@ -394,6 +523,22 @@ class NekoWidget:
         self.idle_timer = 0
         self.idle_action = "sit"   # sit | wash | presleep
         self.last_click = 0
+
+        # ── Companion state machine ──────────────────────
+        self.bubble = BubbleWidget(self.win)
+        self._companion_cooldown = 0     # seconds until next allowed bubble
+        self._companion_timer = 0        # ticks for random-trigger timer
+        self._companion_next = 180       # ticks until next timer check (~27s)
+        self._last_used = {}             # track which messages already shown
+        self._window_was_open = False    # detect window just closed
+        self._suppressed_msg = None      # store a suppressed message for later
+        self._afk_start = time.time()    # when user became inactive
+        self._afk_warned_45 = False      # already warned at 45min?
+        self._afk_warned_2h = False      # already went silent at 2hr?
+        self._user_active = True
+
+        # Track global mouse activity for AFK detection
+        self._bind_global_activity()
 
         self._show_sprite(24)  # start with sitting pose
         self._bind_events()
@@ -452,7 +597,115 @@ class NekoWidget:
             self.idle_timer = 0
             self.idle_action = "sit"
 
+        # ── Companion trigger ─────────────────────────
+        self._companion_think()
+
         self.win.after(150, self._tick)
+
+    # ── Companion State Machine ─────────────────────────
+    def _bind_global_activity(self):
+        """Track mouse moves on the root window for AFK detection."""
+        def on_activity(e=None):
+            self._user_active = True
+            was_deep_afk = self._afk_warned_2h
+            if was_deep_afk:
+                self._afk_warned_2h = False
+                self._afk_warned_45 = False
+                self._afk_start = time.time()
+            else:
+                self._afk_start = time.time()
+                self._afk_warned_45 = False
+        root.bind("<Motion>", on_activity)
+        root.bind("<Key>", on_activity)
+        root.bind("<Button>", on_activity)
+
+    def _companion_think(self):
+        now = time.time()
+
+        # Update AFK timer
+        afk_elapsed = now - self._afk_start
+        if self._user_active:
+            self._afk_start = now
+            self._user_active = False
+
+        # Enforce cooldown
+        if self._companion_cooldown > 0:
+            self._companion_cooldown -= 0.15
+            return
+
+        # Silent hours 02:00-08:00
+        hour = time.localtime().tm_hour
+        if 2 <= hour < 8:
+            return
+
+        # Window-open suppression
+        mw = MainWindow._instance
+        window_open = mw is not None and mw.win.winfo_exists() and mw.win.winfo_viewable()
+        if window_open:
+            self._window_was_open = True
+            return
+
+        # Just-closed window → happy trigger (priority 0)
+        if self._window_was_open and not window_open:
+            self._window_was_open = False
+            self._suppressed_msg = ("happy", "刚刚聊完，说句好听的")
+            self.win.after(500, self._deliver_suppressed)
+            self._companion_cooldown = 300  # 5min cooldown after window close
+            return
+
+        # AFK 2h+ → deep sleep, deliver "you're back" on return
+        if afk_elapsed > 7200 and not self._afk_warned_2h:
+            self._afk_warned_2h = True
+            return  # total silence, wait for activity
+
+        # AFK 45min → lonely trigger (priority 2)
+        if afk_elapsed > 2700 and not self._afk_warned_45:
+            self._afk_warned_45 = True
+            self._speak("lonely")
+            self._companion_cooldown = 600
+            return
+
+        # Deep night → care trigger (priority 1)
+        if hour >= 23 or hour < 2:
+            if self._companion_timer > 90:
+                self._companion_timer = 0
+                self._speak("care")
+                self._companion_cooldown = 1200  # 20min
+                return
+
+        # Default timer trigger → roast (priority 3)
+        self._companion_timer += 1
+        if self._companion_timer >= self._companion_next:
+            self._companion_timer = 0
+            self._companion_next = 120 + int(time.time() * 1000) % 120  # 8-15min
+            self._speak("roast")
+            self._companion_cooldown = 240 + int(time.time() * 1000) % 360  # 4-10min
+
+    def _deliver_suppressed(self):
+        if self._suppressed_msg:
+            mood, _ = self._suppressed_msg
+            self._speak(mood)
+            self._suppressed_msg = None
+
+    def _speak(self, mood):
+        msg = self._pick_message(mood)
+        if not msg:
+            return
+        self.bubble.show(self.x, self.y, msg, mood)
+
+    def _pick_message(self, mood):
+        pool = CAT_MESSAGES.get(mood, CAT_MESSAGES["roast"])
+        key = f"_{mood}_used"
+        used = getattr(self, key, set())
+        available = [m for m in pool if m not in used]
+        if not available:
+            used.clear()
+            available = list(pool)
+        import random
+        msg = random.choice(available)
+        used.add(msg)
+        setattr(self, key, used)
+        return msg
 
     # ── Events ───────────────────────────────────────────
     def _bind_events(self):
